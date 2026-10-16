@@ -6,29 +6,62 @@ def view_all_tickets(tickets):
         return
 
     print("\n========== ALL SUPPORT TICKETS ==========\n")
-
     for ticket_id, ticket in tickets.items():
-        print(f"Ticket ID: {ticket_id}")
-        print(f"Title: {ticket['title']}")
-        print(f"Category: {ticket['category']}")
-        print(f"Urgency: {ticket['urgency']}")
-        print(f"Affected Users: {ticket['affected_users']}")
-        print(f"Priority: {ticket['priority']}")
-        print(f"Status: {ticket['status']}")
-        print(f"Assigned To: {ticket['assigned_to']}")
-        print("-" * 40)
+        display_ticket(ticket_id, ticket)
 
-def calculate_priority(urgency,affected_users):
-# Determine ticket priority
+    
+#display ticket helper function
+def display_ticket(ticket_id, ticket):
+    """Display all support tickets."""
+    print(f"Ticket ID: {ticket_id}")
+    print(f"Title: {ticket['title']}")
+    print(f"Category: {ticket['category']}")
+    print(f"Urgency: {ticket['urgency']}")
+    print(f"Affected Users: {ticket['affected_users']}")
+    print(f"Priority: {ticket['priority']}")
+    print(f"Status: {ticket['status']}")
+    print(f"Assigned To: {ticket['assigned_to']}")
+    print("-" * 40)
+
+
+def calculate_priority(urgency, affected_users):
     if urgency == "high" and affected_users >= 10:
-        priority = "critical"
-    elif urgency == "high":
-        priority = "high"
-    elif urgency == "medium":
-        priority = "medium"
+        return "critical"
+    elif urgency == "high" or affected_users >= 10:
+        return "high"
+    elif urgency == "medium" or affected_users >= 3:
+        return "medium"
     else:
-        priority = "low"
-    return priority
+        return "low"
+    
+
+
+#assign ticket to staff
+def assign_ticket(tickets):
+    """Assign a support ticket to a staff member."""
+
+    if not tickets:
+        print("No tickets available for assignment.")
+        return
+
+    ticket_id = input("Enter ticket ID: ").strip().upper()
+
+    if ticket_id not in tickets:
+        print("Ticket not found.")
+        return
+
+    staff_name = input("Enter staff member's name: ").strip()
+
+    if not staff_name:
+        print("Staff name cannot be empty.")
+        return
+
+    tickets[ticket_id]["assigned_to"] = staff_name
+
+    print(f"Ticket {ticket_id} has been assigned to {staff_name}.")
+
+
+
 
 
 #create ticket code
@@ -105,6 +138,7 @@ def create_ticket(tickets):
         ticket_number += 1
         ticket_id = f"T{ticket_number:03d}"
 
+    priority = calculate_priority(urgency, affected_users)
     # Create the ticket dictionary
     ticket = {
         "id": ticket_id,
@@ -112,7 +146,7 @@ def create_ticket(tickets):
         "category": category,
         "urgency": urgency,
         "affected_users": affected_users,
-        "priority": calculate_priority(urgency,affected_users),
+        "priority": priority,
         "status": "open",
         "assigned_to": None
     }
@@ -124,7 +158,7 @@ def create_ticket(tickets):
     print("Ticket ID:", ticket_id)
     print("Title:", title)
     print("Category:", category)
-    print("Priority:", calculate_priority(urgency,affected_users))
+    print("Priority:", priority)
     print("Status: open")
 
 

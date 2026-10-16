@@ -1,0 +1,12 @@
+{
+    "T001": {
+        "id": "T001",
+        "title": "electricity",
+        "category": "Other",
+        "urgency": "high",
+        "affected_users": 40,
+        "priority": "critical",
+        "status": "open",
+        "assigned_to": "kingsley"
+    }
+}
