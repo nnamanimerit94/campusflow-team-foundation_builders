@@ -18,6 +18,17 @@ def view_all_tickets(tickets):
         print(f"Assigned To: {ticket['assigned_to']}")
         print("-" * 40)
 
+def calculate_priority(urgency,affected_users):
+# Determine ticket priority
+    if urgency == "high" and affected_users >= 10:
+        priority = "critical"
+    elif urgency == "high":
+        priority = "high"
+    elif urgency == "medium":
+        priority = "medium"
+    else:
+        priority = "low"
+    return priority
 
 
 #create ticket code
