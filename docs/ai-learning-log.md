@@ -1,174 +1,357 @@
-# AI Learning Log — CampusFlow
+# CampusFlow Next - AI Learning Log
 
-## 1. Introduction
+## 1. Purpose
 
-During the development of CampusFlow, we used ChatGPT as an AI
-assistant to help us understand Python programming concepts,
-organize our code, and develop the application's features.
+This document records how we used AI to understand programming
+concepts and improve our CampusFlow application.
 
-We did not rely on AI alone. We reviewed the suggested code and
-worked to understand how the different functions operate.
+We used AI to explain concepts, suggest test cases, compare possible
+solutions, and help us understand problems.
 
-## 2. AI Tool Used
+We did not treat AI-generated code or advice as automatically correct.
+We checked suggestions against our requirements, experiments, and
+automated tests.
 
-- Tool: ChatGPT
-- Purpose: Learning Python, debugging, generating code suggestions,
-  writing tests, and improving project organization.
+Our aim was to understand the code we implemented and be able to
+explain our decisions without AI assistance.
 
-## 3. Learning Activities
+---
 
-### Activity 1: Creating the Main Menu
+# ENGINEER A - Ticket Safety and Storage Engineer
 
-**Task:**
-Create a main menu that allows users to select Admin, Student, or Exit.
+## Learning Cycle A1: Validating Data Before Changing It
 
-**How AI helped:**
-ChatGPT suggested using a function, a while loop, and if-elif
-statements to display the menu and process the user's selection.
+### 1. Original concept gap
 
-**What I learned:**
-- How to define a function using `def`.
-- How to use `while True` to repeat a menu.
-- How to collect user input with `input()`.
-- How to use `if`, `elif`, and `else`.
-- How to use `break` to exit a loop.
+I initially needed a better understanding of how to validate ticket
+information before changing the ticket collection.
 
-**My contribution:**
-I modified the suggested code to create separate menus for
-administrators and students.
+I also needed to understand why an invalid operation must not leave
+partially modified data behind.
 
-**Verification:**
-I ran the program and checked whether the correct menu appeared
-for each selection.
+### 2. Exact question asked AI
 
-### Activity 2: Loading Tickets from JSON
+"Explain how to validate a dictionary before mutating it, using a
+book library example, then quiz me."
 
-**Task:**
-Load ticket information from a JSON file into Python.
+### 3. Summary of AI guidance
 
-**How AI helped:**
-ChatGPT explained how to use Python's `json` and `os` modules
-to create a JSON file if it does not exist and load its contents.
+AI explained that a program should check whether the supplied data
+meets the requirements before changing the original collection.
 
-**What I learned:**
-- How to open files using `open()`.
-- How to use `os.path.exists()` to check whether a file exists.
-- How to use `json.load()` to read JSON data.
-- How JSON objects can be represented as Python dictionaries.
-- Why JSON uses `null` instead of Python's `None`.
+For example, before assigning a ticket to a staff member, the
+program should check that the ticket exists, the staff name is not
+blank, and the ticket is not resolved.
 
-**My contribution:**
-I decided to store tickets in a dictionary of dictionaries,
-using each ticket ID as the key.
+If validation fails, the program should reject the operation without
+changing the ticket.
 
-**Verification:**
-I checked that the JSON structure matched the dictionary structure
-required by the application.
+This approach helps keep the application's data consistent.
 
-### Activity 3: Creating Ticket Functions
+### 4. Small unrelated experiment
 
-**Task:**
-Implement functions for creating, viewing, and assigning tickets.
+I used a small dictionary representing books in a library.
 
-**How AI helped:**
-ChatGPT suggested functions that accept the ticket dictionary
-as an argument and perform operations on it.
+I attempted to change a book's availability only after checking
+whether the book existed.
 
-**What I learned:**
-- How to define functions with parameters.
-- How to access dictionary values using keys.
-- How to add new entries to a dictionary.
-- How to update ticket information.
-- How to validate user input.
+I also tested an invalid book ID to observe whether the original
+dictionary remained unchanged.
 
-**My contribution:**
-I integrated the functions into the menus in `main.py` and
-organized the ticket-related functions in `tickets.py`.
+Experiment code:
 
-**Verification:**
-I checked the ticket dictionary after creating or assigning
-a ticket to confirm that the expected values had changed.
+[Insert the small experiment you actually performed.]
 
-### Activity 4: Updating Ticket Status and Work Queue
+### 5. Independent verification
 
-**Task:**
-Allow administrators to update ticket status and view the work queue.
+I checked the behaviour by comparing the dictionary before and
+after an invalid operation.
 
-**How AI helped:**
-ChatGPT suggested using conditional statements to update ticket
-statuses and sorting tickets according to priority.
+I also examined the relevant CampusFlow requirements and wrote
+tests for invalid ticket operations.
 
-**What I learned:**
-- How to update dictionary values.
-- How to use conditions to validate menu choices.
-- How to filter tickets based on their status.
-- How to sort tickets using a priority order.
+Evidence:
 
-**My contribution:**
-I connected the functions to the appropriate options in the
-Admin menu.
+[Record the test name and actual result.]
 
-**Verification:**
-I checked whether tickets had the expected status and whether
-the work queue displayed unresolved tickets in priority order.
+### 6. Final engineering decision
 
-### Activity 5: Writing Automated Tests
+I decided to validate input before modifying ticket data.
 
-**Task:**
-Write automated tests for ticket and workflow functions.
+I will use automated tests to check that rejected operations leave
+the ticket collection unchanged.
 
-**How AI helped:**
-ChatGPT introduced me to Python's `unittest` module and showed
-how to test functions using sample ticket dictionaries.
+### 7. Personal reflection
 
-**What I learned:**
-- How to create a test class.
-- How to use `setUp()` to prepare test data.
-- How to use assertions such as `assertEqual()` and `assertIn()`.
-- How to simulate user input using `unittest.mock.patch`.
-- Why automated tests help detect errors.
+Before this exercise, I thought checking whether an operation was
+valid was enough.
 
-**My contribution:**
-I organized the suggested tests into separate files for ticket
-operations, workflow operations, and storage operations.
+I learned that I must also check whether the operation changed any
+data before it was rejected.
 
-**Verification:**
-I planned to run the tests using Python's unittest test discovery
-and investigate any failures.
+I can demonstrate this by comparing the ticket collection before
+and after an invalid operation.
 
-## 4. Critical Evaluation of AI Suggestions
+---
 
-AI-generated code must be reviewed before being accepted.
+## Learning Cycle A2: Safe JSON Loading
 
-During development, I learned that:
+### 1. Original concept gap
 
-- Suggested code may not match the existing project structure.
-- Function names and parameters must match across files.
-- Updating a dictionary in memory does not automatically save
-  changes to a JSON file.
-- JSON uses `null`, whereas Python uses `None`.
-- Tests must match the actual implementation.
-- A program should be tested rather than assumed to work because
-  an AI assistant generated the code.
+I needed to understand why successfully reading a JSON file does
+not guarantee that its contents are valid for CampusFlow.
 
-I used these lessons to review the suggested code and consider
-how the different modules should work together.
+A file can contain valid JSON but still contain incomplete or
+inconsistent ticket records.
 
-## 5. Improvements and Future Learning
+### 2. Exact question asked AI
 
-The next areas I intend to improve are:
+"Why might json.load succeed but return unsafe or inconsistent
+business data?"
 
-- Implementing reliable JSON saving and loading.
-- Testing the complete application.
-- Handling invalid input consistently.
-- Improving ticket ID generation.
-- Understanding the code well enough to explain it independently.
-- Reviewing code changes with my teammate.
+### 3. Summary of AI guidance
 
-## 6. Conclusion
+AI explained that JSON decoding checks whether the file contains
+valid JSON syntax. It does not automatically verify all the rules
+required by an application.
 
-Using ChatGPT helped me explore Python programming and understand
-how to divide an application into smaller functions and modules.
+For example, a ticket could have a valid JSON structure but contain
+an invalid category, an unsupported status, or a missing notes field.
 
-The process also taught me that AI-generated code requires
-human review, testing, and verification before it can be trusted.
+The application therefore needs to validate the decoded data
+before accepting it as its ticket collection.
+
+### 4. Small unrelated experiment
+
+I created a small JSON file representing a book collection.
+
+The JSON syntax was valid, but one book record was missing a
+required field.
+
+I checked whether the file could be decoded and whether my own
+validation logic detected the missing field.
+
+Experiment code:
+
+[Insert the small experiment you actually performed.]
+
+### 5. Independent verification
+
+I compared the results of JSON decoding with the results of
+application-level validation.
+
+I also tested how CampusFlow responds to invalid stored data.
+
+Evidence:
+
+[Record the test name and actual result.]
+
+### 6. Final engineering decision
+
+I decided that CampusFlow must validate the complete ticket
+collection before replacing the current in-memory data.
+
+If loading fails, the existing ticket collection must remain
+unchanged.
+
+I will verify this behaviour using automated tests.
+
+### 7. Personal reflection
+
+I learned that valid JSON is not necessarily valid application data.
+
+I now understand why decoding and validation are separate steps.
+
+I will use this distinction when implementing and reviewing
+CampusFlow's storage functions.
+
+---
+
+# ENGINEER B - Search, Reporting and CLI Engineer
+
+## Learning Cycle B1: Combining Search Filters
+
+### 1. Original concept gap
+
+I needed to understand how multiple search filters should work
+together.
+
+For example, a user might search for a title containing "wifi"
+while also selecting the Network category and open status.
+
+### 2. Exact question asked AI
+
+"Compare casefold and lower for search; suggest test cases but do
+not implement my project."
+
+### 3. Summary of AI guidance
+
+AI explained that case-insensitive substring matching can be
+implemented by converting the title and search text to a consistent
+case before checking whether one contains the other.
+
+The search filters must use logical AND.
+
+This means a ticket must satisfy every supplied filter to appear
+in the results.
+
+An empty filter means that the corresponding field should not
+restrict the results.
+
+### 4. Small unrelated experiment
+
+I created a small list of book titles and searched them using
+different letter cases.
+
+I then combined a title search with a category filter to check
+whether only matching books were returned.
+
+Experiment code:
+
+[Insert the small experiment you actually performed.]
+
+### 5. Independent verification
+
+I compared the experiment's results with the expected results.
+
+I also created or reviewed tests for case-insensitive title matching
+and combined filters.
+
+Evidence:
+
+[Record the test name and actual result.]
+
+### 6. Final engineering decision
+
+I decided that CampusFlow search should use case-insensitive
+substring matching and apply all supplied filters together.
+
+I will keep search read-only so that searching cannot accidentally
+change ticket data.
+
+### 7. Personal reflection
+
+I learned that using several filters is different from returning
+records that match any one of them.
+
+I can explain the use of logical AND by showing a test where a
+ticket matches the title but fails the category filter.
+
+---
+
+## Learning Cycle B2: Reliable Report Calculations
+
+### 1. Original concept gap
+
+I needed to understand how to calculate ticket statistics without
+counting tickets incorrectly.
+
+I also needed to understand what should happen when the ticket
+collection is empty.
+
+### 2. Exact question asked AI
+
+"Explain how to calculate counts and percentages from a dictionary
+of records, including how to handle an empty collection."
+
+### 3. Summary of AI guidance
+
+AI explained that each ticket should be counted according to its
+current status.
+
+The unresolved count is the sum of open and in-progress tickets.
+
+The resolved count includes only tickets whose current status is
+resolved.
+
+The resolution percentage is calculated as:
+
+Resolution percentage = resolved tickets / total tickets * 100
+
+An empty collection needs special handling because division by
+zero is not allowed.
+
+For an empty collection, the required resolution percentage is 0%.
+
+### 4. Small unrelated experiment
+
+I created a small dictionary of library books with different
+availability states.
+
+I counted the books in each state and calculated the percentage
+that were available.
+
+I also tested the calculation when the dictionary was empty.
+
+Experiment code:
+
+[Insert the small experiment you actually performed.]
+
+### 5. Independent verification
+
+I calculated the expected results manually and compared them
+with the results from my experiment.
+
+I also checked the report tests for empty collections and
+known ticket fixtures.
+
+Evidence:
+
+[Record the test name and actual result.]
+
+### 6. Final engineering decision
+
+I decided to calculate report statistics from the tickets'
+current data.
+
+I will handle an empty collection explicitly and test the report
+using both empty and non-empty datasets.
+
+### 7. Personal reflection
+
+I learned that a report should be checked against known expected
+results rather than judged only by whether it displays numbers.
+
+I can verify the calculations using a small ticket collection
+whose status counts and resolution percentage I know in advance.
+
+---
+
+# TEAM LEARNING CYCLE: Reviewing an AI Suggestion
+
+## 1. Original concept gap
+
+We needed to understand how to determine whether an AI-generated
+suggestion was appropriate for our existing CampusFlow project.
+
+### 2. Exact question asked AI
+
+[Insert a real question asked by one of the engineers.]
+
+### 3. AI suggestion
+
+[Describe the actual suggestion made by AI.]
+
+### 4. Independent verification
+
+We compared the suggestion with the assignment requirements,
+the existing project structure, and relevant test results.
+
+Evidence:
+
+[Describe the experiment, documentation, or test used.]
+
+### 5. Final decision
+
+[Explain whether we accepted, changed, or rejected the suggestion
+and give the reason supported by our evidence.]
+
+### 6. What we learned
+
+We learned that an AI suggestion must be checked against the
+actual application requirements and implementation.
+
+A suggestion that appears reasonable may still be unsuitable
+for our existing project.
+
+We should be able to explain our final decision using evidence.
