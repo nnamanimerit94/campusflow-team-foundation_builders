@@ -32,7 +32,7 @@ def load_tickets():
         return {}
 
     except (ValueError, OSError) as error:
-        print("Could not load tickets:", error)
+        #print("Could not load tickets:", error)
         return {}
 
 
