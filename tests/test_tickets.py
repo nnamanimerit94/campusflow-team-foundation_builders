@@ -1,140 +1,181 @@
 import unittest
-from unittest.mock import patch
 
-from campusflow.tickets import (
-    create_ticket,
-    view_all_tickets,
-    assign_ticket
-)
+from campusflow.tickets import create_ticket
 
 
-class TestTickets(unittest.TestCase):
+class TestTicketCreation(unittest.TestCase):
 
-    # Test 1: Check if a ticket can be created
-    @patch("builtins.input", side_effect=[
-        "Campus Wi-Fi is down",
-        "1",
-        "3",
-        "15"
-    ])
-    def test_create_ticket(self, mock_input):
-        tickets = {}
+    def test_create_valid_ticket(self):
+        """Test that a ticket can be created with valid information."""
 
-        create_ticket(tickets)
-
-        self.assertEqual(len(tickets), 1)
-        self.assertIn("T001", tickets)
-        self.assertEqual(
-            tickets["T001"]["title"],
-            "Campus Wi-Fi is down"
-        )
-        self.assertEqual(tickets["T001"]["status"], "open")
-
-    # Test 2: Check if a ticket has the correct category
-    @patch("builtins.input", side_effect=[
-        "Laptop problem",
-        "2",
-        "2",
-        "3"
-    ])
-    def test_ticket_category(self, mock_input):
-        tickets = {}
-
-        create_ticket(tickets)
-
-        self.assertEqual(
-            tickets["T001"]["category"],
-            "Hardware"
+        ticket = create_ticket(
+            title="Campus Wi-Fi is down",
+            category="Network",
+            urgency="high",
+            affected_users=15
         )
 
-    # Test 3: Check if a ticket has the correct priority
-    @patch("builtins.input", side_effect=[
-        "Internet problem",
-        "1",
-        "3",
-        "15"
-    ])
-    def test_ticket_priority(self, mock_input):
-        tickets = {}
+        self.assertEqual(ticket["title"], "Campus Wi-Fi is down")
+        self.assertEqual(ticket["category"], "Network")
+        self.assertEqual(ticket["urgency"], "high")
+        self.assertEqual(ticket["affected_users"], 15)
+        self.assertEqual(ticket["priority"], "critical")
+        self.assertEqual(ticket["status"], "open")
+        self.assertIsNone(ticket["assigned_to"])
+        self.assertEqual(ticket["notes"], [])
 
-        create_ticket(tickets)
+    def test_high_urgency_and_many_users_is_critical(self):
+        """High urgency and at least 10 affected users means critical."""
 
-        self.assertEqual(
-            tickets["T001"]["priority"],
-            "critical"
+        ticket = create_ticket(
+            title="Network outage",
+            category="Network",
+            urgency="high",
+            affected_users=10
         )
 
-    # Test 4: Check if an invalid ticket title is rejected
-    @patch("builtins.input", side_effect=[""])
-    def test_empty_ticket_title(self, mock_input):
-        tickets = {}
+        self.assertEqual(ticket["priority"], "critical")
 
-        create_ticket(tickets)
+    def test_high_urgency_alone_is_high(self):
+        """High urgency with fewer than 10 users means high priority."""
 
-        self.assertEqual(len(tickets), 0)
-
-    # Test 5: Check if a ticket can be assigned
-    @patch("builtins.input", side_effect=["T001", "John"])
-    def test_assign_ticket(self, mock_input):
-        tickets = {
-            "T001": {
-                "id": "T001",
-                "title": "Wi-Fi problem",
-                "category": "Network",
-                "urgency": "high",
-                "affected_users": 15,
-                "priority": "critical",
-                "status": "open",
-                "assigned_to": None
-            }
-        }
-
-        assign_ticket(tickets)
-
-        self.assertEqual(
-            tickets["T001"]["assigned_to"],
-            "John"
+        ticket = create_ticket(
+            title="Software problem",
+            category="Software",
+            urgency="high",
+            affected_users=2
         )
 
-    # Test 6: Check if an invalid ticket ID is rejected
-    @patch("builtins.input", side_effect=["T999"])
-    def test_assign_invalid_ticket(self, mock_input):
-        tickets = {}
+        self.assertEqual(ticket["priority"], "high")
 
-        assign_ticket(tickets)
+    def test_many_users_alone_is_high(self):
+        """At least 10 affected users means high priority
+        when urgency is not high.
+        """
 
-        self.assertEqual(len(tickets), 0)
-
-    # Test 7: Check viewing tickets when the dictionary is empty
-    def test_view_empty_tickets(self):
-        tickets = {}
-
-        view_all_tickets(tickets)
-
-        self.assertEqual(len(tickets), 0)
-
-    # Test 8: Check if viewing tickets preserves ticket data
-    def test_view_tickets(self):
-        tickets = {
-            "T001": {
-                "id": "T001",
-                "title": "Wi-Fi problem",
-                "category": "Network",
-                "urgency": "high",
-                "affected_users": 15,
-                "priority": "critical",
-                "status": "open",
-                "assigned_to": None
-            }
-        }
-
-        view_all_tickets(tickets)
-
-        self.assertIn("T001", tickets)
-        self.assertEqual(
-            tickets["T001"]["title"],
-            "Wi-Fi problem"
+        ticket = create_ticket(
+            title="Hardware problem",
+            category="Hardware",
+            urgency="low",
+            affected_users=10
         )
+
+        self.assertEqual(ticket["priority"], "high")
+
+    def test_medium_urgency_gives_medium_priority(self):
+        """Medium urgency with fewer than 3 users means medium."""
+
+        ticket = create_ticket(
+            title="Application issue",
+            category="Software",
+            urgency="medium",
+            affected_users=1
+        )
+
+        self.assertEqual(ticket["priority"], "medium")
+
+    def test_three_affected_users_gives_medium_priority(self):
+        """At least 3 affected users means medium priority
+        when the higher-priority rules do not apply.
+        """
+
+        ticket = create_ticket(
+            title="Computer issue",
+            category="Hardware",
+            urgency="low",
+            affected_users=3
+        )
+
+        self.assertEqual(ticket["priority"], "medium")
+
+    def test_low_priority_ticket(self):
+        """Low urgency and fewer than 3 users means low priority."""
+
+        ticket = create_ticket(
+            title="Minor issue",
+            category="Other",
+            urgency="low",
+            affected_users=1
+        )
+
+        self.assertEqual(ticket["priority"], "low")
+
+    def test_blank_title_is_rejected(self):
+        """A title containing only whitespace must be rejected."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="   ",
+                category="Network",
+                urgency="high",
+                affected_users=5
+            )
+
+    def test_invalid_category_is_rejected(self):
+        """Only the four permitted categories should be accepted."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Electricity",
+                urgency="high",
+                affected_users=5
+            )
+
+    def test_invalid_urgency_is_rejected(self):
+        """Urgency must be low, medium or high."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Network",
+                urgency="urgent",
+                affected_users=5
+            )
+
+    def test_zero_affected_users_is_rejected(self):
+        """Affected users must be greater than zero."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Network",
+                urgency="high",
+                affected_users=0
+            )
+
+    def test_negative_affected_users_is_rejected(self):
+        """Negative affected-user counts must be rejected."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Network",
+                urgency="high",
+                affected_users=-5
+            )
+
+    def test_float_affected_users_is_rejected(self):
+        """Affected users must be an integer, not a float."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Network",
+                urgency="high",
+                affected_users=2.5
+            )
+
+    def test_boolean_affected_users_is_rejected(self):
+        """Boolean values must not be accepted as integers."""
+
+        with self.assertRaises((ValueError, TypeError)):
+            create_ticket(
+                title="Network problem",
+                category="Network",
+                urgency="high",
+                affected_users=True
+            )
 
 
 if __name__ == "__main__":

@@ -1,47 +1,91 @@
+# CampusFlow Next - Ticket Management
+
+
+# Calculate ticket priority
+def calculate_priority(urgency, affected_users):
+    """Calculate ticket priority using the assignment rules."""
+
+    if urgency == "high" and affected_users >= 10:
+        return "critical"
+
+    elif urgency == "high" or affected_users >= 10:
+        return "high"
+
+    elif urgency == "medium" or affected_users >= 3:
+        return "medium"
+
+    else:
+        return "low"
+
+
+# Validate ticket information
+def validate_ticket(title, category, urgency, affected_users):
+    """Check whether the ticket information is valid."""
+
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError("Ticket title cannot be empty.")
+
+    if category not in ["Network", "Hardware", "Software", "Other"]:
+        raise ValueError("Invalid ticket category.")
+
+    if urgency not in ["low", "medium", "high"]:
+        raise ValueError("Invalid urgency.")
+
+    # bool is a subclass of int in Python, so reject it explicitly.
+    if type(affected_users) is not int or affected_users <= 0:
+        raise ValueError(
+            "Affected users must be a positive whole number."
+        )
+
+
+# Generate the next ticket ID
+def next_ticket_id(tickets):
+    """Generate a unique ticket ID."""
+
+    highest_number = 0
+
+    for ticket_id in tickets:
+        if (
+            isinstance(ticket_id, str)
+            and ticket_id.startswith("T")
+            and ticket_id[1:].isdigit()
+        ):
+            number = int(ticket_id[1:])
+
+            if number > highest_number:
+                highest_number = number
+
+    return f"T{highest_number + 1:03d}"
+
+
+# Display all tickets
 def view_all_tickets(tickets):
     """Display all support tickets."""
 
     if not tickets:
-        print("No tickets found.")
+        print("\nNo tickets found.")
         return
 
     print("\n========== ALL SUPPORT TICKETS ==========\n")
+
     for ticket_id, ticket in tickets.items():
-        display_ticket(ticket_id, ticket)
-
-    
-#display ticket helper function
-def display_ticket(ticket_id, ticket):
-    """Display all support tickets."""
-    print(f"Ticket ID: {ticket_id}")
-    print(f"Title: {ticket['title']}")
-    print(f"Category: {ticket['category']}")
-    print(f"Urgency: {ticket['urgency']}")
-    print(f"Affected Users: {ticket['affected_users']}")
-    print(f"Priority: {ticket['priority']}")
-    print(f"Status: {ticket['status']}")
-    print(f"Assigned To: {ticket['assigned_to']}")
-    print("-" * 40)
+        print(f"Ticket ID: {ticket_id}")
+        print(f"Title: {ticket['title']}")
+        print(f"Category: {ticket['category']}")
+        print(f"Urgency: {ticket['urgency']}")
+        print(f"Affected Users: {ticket['affected_users']}")
+        print(f"Priority: {ticket['priority']}")
+        print(f"Status: {ticket['status']}")
+        print(f"Assigned To: {ticket['assigned_to']}")
+        print("-" * 40)
 
 
-def calculate_priority(urgency, affected_users):
-    if urgency == "high" and affected_users >= 10:
-        return "critical"
-    elif urgency == "high" or affected_users >= 10:
-        return "high"
-    elif urgency == "medium" or affected_users >= 3:
-        return "medium"
-    else:
-        return "low"
-    
-
-
-#assign ticket to staff
+# Assign a ticket to a staff member
 def assign_ticket(tickets):
-    """Assign a support ticket to a staff member."""
+    """Assign a ticket to a staff member."""
 
     if not tickets:
-        print("No tickets available for assignment.")
+        print("\nNo tickets available for assignment.")
         return
 
     ticket_id = input("Enter ticket ID: ").strip().upper()
@@ -50,33 +94,39 @@ def assign_ticket(tickets):
         print("Ticket not found.")
         return
 
+    ticket = tickets[ticket_id]
+
+    # A resolved ticket cannot be reassigned.
+    if ticket["status"] == "resolved":
+        print("A resolved ticket must be reopened before reassignment.")
+        return
+
     staff_name = input("Enter staff member's name: ").strip()
 
     if not staff_name:
         print("Staff name cannot be empty.")
         return
 
-    tickets[ticket_id]["assigned_to"] = staff_name
+    # Change the ticket only after validation.
+    ticket["assigned_to"] = staff_name
 
     print(f"Ticket {ticket_id} has been assigned to {staff_name}.")
 
 
-
-
-
-#create ticket code
+# Create a new support ticket
 def create_ticket(tickets):
-    """Create a new support ticket."""
+    """Collect information and create a support ticket."""
 
     print("\n========== CREATE SUPPORT TICKET ==========")
 
-    # Get ticket details from the student
+    # Get the ticket title.
     title = input("Enter ticket title: ").strip()
 
     if not title:
         print("Ticket title cannot be empty.")
         return
 
+    # Get the category.
     print("\nSelect a category:")
     print("1. Network")
     print("2. Hardware")
@@ -98,6 +148,7 @@ def create_ticket(tickets):
 
     category = categories[category_choice]
 
+    # Get the urgency.
     print("\nSelect urgency:")
     print("1. Low")
     print("2. Medium")
@@ -117,29 +168,38 @@ def create_ticket(tickets):
 
     urgency = urgencies[urgency_choice]
 
-    try:
-        affected_users = int(
-            input("Enter the number of affected users: ")
-        )
+    # Get the number of affected users.
+    affected_users_input = input(
+        "Enter the number of affected users: "
+    ).strip()
 
-        if affected_users < 1:
-            print("The number of affected users must be at least 1.")
-            return
+    try:
+        affected_users = int(affected_users_input)
 
     except ValueError:
         print("Please enter a valid whole number.")
         return
 
-    # Generate a unique ticket ID
-    ticket_number = len(tickets) + 1
-    ticket_id = f"T{ticket_number:03d}"
+    # Validate the information before creating the ticket.
+    try:
+        validate_ticket(
+            title,
+            category,
+            urgency,
+            affected_users
+        )
 
-    while ticket_id in tickets:
-        ticket_number += 1
-        ticket_id = f"T{ticket_number:03d}"
+    except ValueError as error:
+        print(error)
+        return
 
+    # Generate a unique ticket ID.
+    ticket_id = next_ticket_id(tickets)
+
+    # Calculate priority using the assignment rules.
     priority = calculate_priority(urgency, affected_users)
-    # Create the ticket dictionary
+
+    # Create the ticket.
     ticket = {
         "id": ticket_id,
         "title": title,
@@ -148,27 +208,24 @@ def create_ticket(tickets):
         "affected_users": affected_users,
         "priority": priority,
         "status": "open",
-        "assigned_to": None
+        "assigned_to": None,
+        "notes": []
     }
 
-    # Add the ticket to the main tickets dictionary
+    # Add the ticket to the collection.
     tickets[ticket_id] = ticket
 
     print("\nTicket created successfully!")
-    print("Ticket ID:", ticket_id)
-    print("Title:", title)
-    print("Category:", category)
-    print("Priority:", priority)
+    print(f"Ticket ID: {ticket_id}")
+    print(f"Title: {title}")
+    print(f"Category: {category}")
+    print(f"Priority: {priority}")
     print("Status: open")
 
 
-
-
-
-
-#student view tickets
+# Display tickets for students
 def view_student_tickets(tickets):
-    """Display all tickets for students."""
+    """Display ticket information for students."""
 
     if not tickets:
         print("\nNo tickets are available.")
@@ -177,11 +234,11 @@ def view_student_tickets(tickets):
     print("\n========== VIEW TICKETS ==========")
 
     for ticket_id, ticket in tickets.items():
-        print("----------------------------------")
-        print("Ticket ID:", ticket_id)
-        print("Title:", ticket["title"])
-        print("Category:", ticket["category"])
-        print("Priority:", ticket["priority"])
-        print("Status:", ticket["status"])
+        print("-" * 35)
+        print(f"Ticket ID: {ticket_id}")
+        print(f"Title: {ticket['title']}")
+        print(f"Category: {ticket['category']}")
+        print(f"Priority: {ticket['priority']}")
+        print(f"Status: {ticket['status']}")
 
-    print("----------------------------------")
+    print("-" * 35)
