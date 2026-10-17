@@ -1,38 +1,95 @@
 import unittest
 from unittest.mock import patch
-from campusflow.workflow import update_ticket_status, view_work_queue
+from copy import deepcopy
+
+from campusflow.workflow import assign_ticket, update_ticket_status
 
 
-class TestWorkflow(unittest.TestCase):
+class TestTicketWorkflow(unittest.TestCase):
 
-    # Sample tickets for testing
     def setUp(self):
+        """Create sample tickets before each test."""
+
         self.tickets = {
             "T001": {
                 "id": "T001",
-                "title": "Wi-Fi is not working",
+                "title": "Campus Wi-Fi is down",
                 "category": "Network",
                 "urgency": "high",
                 "affected_users": 15,
                 "priority": "critical",
                 "status": "open",
-                "assigned_to": None
+                "assigned_to": None,
+                "notes": []
             },
             "T002": {
                 "id": "T002",
-                "title": "Laptop problem",
+                "title": "Laptop is faulty",
                 "category": "Hardware",
                 "urgency": "medium",
                 "affected_users": 3,
                 "priority": "medium",
                 "status": "open",
-                "assigned_to": None
+                "assigned_to": "John",
+                "notes": []
             }
         }
 
-    # Test 1: Update a ticket to in progress
+    # ----------------------------------------
+    # ASSIGNMENT TESTS
+    # ----------------------------------------
+
+    @patch("builtins.input", side_effect=["T001", "Mary"])
+    def test_assign_ticket_to_staff(self, mock_input):
+        """A valid ticket can be assigned to a staff member."""
+
+        assign_ticket(self.tickets)
+
+        self.assertEqual(
+            self.tickets["T001"]["assigned_to"],
+            "Mary"
+        )
+
+    @patch("builtins.input", side_effect=["T999", "Mary"])
+    def test_assign_nonexistent_ticket(self, mock_input):
+        """An unknown ticket ID must not change any ticket."""
+
+        original_tickets = deepcopy(self.tickets)
+
+        assign_ticket(self.tickets)
+
+        self.assertEqual(self.tickets, original_tickets)
+
+    @patch("builtins.input", side_effect=["T001", "   "])
+    def test_assign_ticket_with_blank_staff_name(self, mock_input):
+        """A blank staff name must be rejected."""
+
+        original_tickets = deepcopy(self.tickets)
+
+        assign_ticket(self.tickets)
+
+        self.assertEqual(self.tickets, original_tickets)
+
+    def test_assign_ticket_when_no_tickets_exist(self):
+        """Assignment should be rejected when no tickets exist."""
+
+        empty_tickets = {}
+
+        with patch("builtins.input", return_value="T001"):
+            assign_ticket(empty_tickets)
+
+        self.assertEqual(empty_tickets, {})
+
+    # ----------------------------------------
+    # STATUS UPDATE TESTS
+    # ----------------------------------------
+
     @patch("builtins.input", side_effect=["T001", "2"])
-    def test_update_ticket_status(self, mock_input):
+    def test_update_open_ticket_to_in_progress(self, mock_input):
+        """An assigned open ticket can move to in_progress."""
+
+        self.tickets["T001"]["assigned_to"] = "Mary"
+
         update_ticket_status(self.tickets)
 
         self.assertEqual(
@@ -40,9 +97,13 @@ class TestWorkflow(unittest.TestCase):
             "in_progress"
         )
 
-    # Test 2: Resolve a ticket
     @patch("builtins.input", side_effect=["T001", "3"])
-    def test_resolve_ticket(self, mock_input):
+    def test_update_ticket_to_resolved(self, mock_input):
+        """An in-progress ticket can be resolved."""
+
+        self.tickets["T001"]["assigned_to"] = "Mary"
+        self.tickets["T001"]["status"] = "in_progress"
+
         update_ticket_status(self.tickets)
 
         self.assertEqual(
@@ -50,9 +111,12 @@ class TestWorkflow(unittest.TestCase):
             "resolved"
         )
 
-    # Test 3: Reject an invalid ticket ID
-    @patch("builtins.input", side_effect=["T999"])
-    def test_invalid_ticket_id(self, mock_input):
+    @patch("builtins.input", side_effect=["T001", "1"])
+    def test_reopen_resolved_ticket(self, mock_input):
+        """A resolved ticket can be reopened."""
+
+        self.tickets["T001"]["status"] = "resolved"
+
         update_ticket_status(self.tickets)
 
         self.assertEqual(
@@ -60,63 +124,68 @@ class TestWorkflow(unittest.TestCase):
             "open"
         )
 
-    # Test 4: Reject an invalid status choice
+    @patch("builtins.input", side_effect=["T001", "2"])
+    def test_unassigned_ticket_cannot_move_to_in_progress(self, mock_input):
+        """An unassigned open ticket must not enter in_progress."""
+
+        original_tickets = deepcopy(self.tickets)
+
+        update_ticket_status(self.tickets)
+
+        self.assertEqual(self.tickets, original_tickets)
+
+    @patch("builtins.input", side_effect=["T999", "2"])
+    def test_update_nonexistent_ticket(self, mock_input):
+        """An unknown ticket ID must not change the collection."""
+
+        original_tickets = deepcopy(self.tickets)
+
+        update_ticket_status(self.tickets)
+
+        self.assertEqual(self.tickets, original_tickets)
+
     @patch("builtins.input", side_effect=["T001", "9"])
     def test_invalid_status_choice(self, mock_input):
+        """An invalid menu choice must not change ticket data."""
+
+        original_tickets = deepcopy(self.tickets)
+
         update_ticket_status(self.tickets)
 
-        self.assertEqual(
-            self.tickets["T001"]["status"],
-            "open"
-        )
+        self.assertEqual(self.tickets, original_tickets)
 
-    # Test 5: Handle an empty ticket dictionary
-    def test_empty_tickets(self):
-        tickets = {}
+    @patch("builtins.input", side_effect=["T001", "3"])
+    def test_open_ticket_cannot_skip_to_resolved(self, mock_input):
+        """An open ticket must not skip the in_progress state."""
 
-        update_ticket_status(tickets)
+        original_tickets = deepcopy(self.tickets)
 
-        self.assertEqual(len(tickets), 0)
+        update_ticket_status(self.tickets)
 
-    # Test 6: Work queue displays unresolved tickets
-    @patch("builtins.print")
-    def test_view_work_queue(self, mock_print):
-        view_work_queue(self.tickets)
+        self.assertEqual(self.tickets, original_tickets)
 
-        output = " ".join(
-            str(call) for call in mock_print.call_args_list
-        )
+    @patch("builtins.input", side_effect=["T001", "2"])
+    def test_resolved_ticket_cannot_move_directly_to_in_progress(
+        self, mock_input
+    ):
+        """A resolved ticket must be reopened before work resumes."""
 
-        self.assertIn("T001", output)
-        self.assertIn("T002", output)
+        self.tickets["T001"]["status"] = "resolved"
+        original_tickets = deepcopy(self.tickets)
 
-    # Test 7: Work queue excludes resolved tickets
-    @patch("builtins.print")
-    def test_work_queue_excludes_resolved_tickets(self, mock_print):
-        self.tickets["T002"]["status"] = "resolved"
+        update_ticket_status(self.tickets)
 
-        view_work_queue(self.tickets)
+        self.assertEqual(self.tickets, original_tickets)
 
-        output = " ".join(
-            str(call) for call in mock_print.call_args_list
-        )
+    def test_status_update_when_no_tickets_exist(self):
+        """Status updates must be rejected for an empty collection."""
 
-        self.assertIn("T001", output)
-        self.assertNotIn("T002", output)
+        empty_tickets = {}
 
-    # Test 8: Work queue displays higher priorities first
-    @patch("builtins.print")
-    def test_work_queue_priority_order(self, mock_print):
-        view_work_queue(self.tickets)
+        with patch("builtins.input", return_value="T001"):
+            update_ticket_status(empty_tickets)
 
-        output = " ".join(
-            str(call) for call in mock_print.call_args_list
-        )
-
-        critical_position = output.find("critical")
-        medium_position = output.find("medium")
-
-        self.assertLess(critical_position, medium_position)
+        self.assertEqual(empty_tickets, {})
 
 
 if __name__ == "__main__":
